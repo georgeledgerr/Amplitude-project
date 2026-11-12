@@ -1,9 +1,10 @@
 import os
 import requests
 import json
-from datetime import datetime, timedelta, timezone # didnt know you could import several packages and name them one thing 
+from datetime import datetime, timedelta, timezone, time # didnt know you could import several packages and name them one thing 
 from dotenv import load_dotenv
 import sys
+import zipfile
 
 timestamp = datetime.now().strftime('%Y-%m-%d %H-%M-%S') #timestamp for our data and filename
 #print(timestamp)
@@ -13,6 +14,7 @@ data_dir = 'amplitude_data' #naming folder where data is stored
 os.makedirs(data_dir, exist_ok=True) #makes the file and exist_ok means that if it exists already then it doesnt break
 filename = f'{data_dir}/{timestamp}.zip' #filepath i.e. goto the directory for this repo and save this file i.e. amplitude_data/
 #this ran fine
+#going to remove because i have added new gitignore
 
 url='https://analytics.eu.amplitude.com/api/2/export' #EU endpoint DONT USE STANDARD
 #Id like to put some error handling here incase the url changes for EU
@@ -38,7 +40,7 @@ secret_key = os.getenv('AMP_SECRET_KEY') #loads in secret key
 #error handling if no API key present in .env
 if not api_key or not secret_key: #this checks if the rows exist in the .env file
     print('Keys not found, check .env file :/')
-    sys.exit(1)
+    sys.exit(1) #abnormal error from my understanding, but it stops the run if no keys are found
 
 Test = True  #for testing 1h vs on a schedule dynamically
  
@@ -54,5 +56,12 @@ else:
 
 start_end = {'start': start_time, 'end': end_time}  # now dynamic and can either be in test or normal mode
 # example from docs 'GET 'https://amplitude.com/api/2/export?start=20220101T00&end=20220101T23'
+
+filename = f'{data_dir}/pull_{start_time}_{end_time}.zip' #how file name is being stored with no duplicates
+print(f'Requesting {start_time} to {end_time}') #showing what is being requested
+
+if os.path.exists(filename): #checks if file already exists and skips if it does (consideration)
+    print(f'File {filename} already exists. Skipping download.')
+    sys.exit()
 
 response = requests.get(url, params=start_end, auth=(api_key, secret_key))
