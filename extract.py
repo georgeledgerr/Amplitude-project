@@ -90,3 +90,19 @@ while attempt <= max_attempts:
         time.sleep(delay_to_retry_seconds)
 
     attempt+=1
+
+else:
+    print('Max attempts reached, please investigate 🗿') #only reaches here if the while loop isnt broken
+    sys.exit(1)
+ 
+with open(filename, 'wb') as file: #write file to the filename path and write bytes because its a zip file, JSON DIDNT WORK
+    #with allows the file to be closed automatically after it is done, so no need to close it manually
+    file.write(response.content)
+ 
+if zipfile.is_zipfile(filename): #a quick check to see if the zip file was truncated and would appear as incomplete
+    #apparently  a zips index is at the end of the file and a partial file would fail this check 
+    print(f'Saved {filename}')
+else:
+    print(f'{filename} is not a valid zip')
+    os.remove(filename) #removes the file if its not a valid zip - also, in case of a partial download, this will remove the file so that it can be retried next time
+    sys.exit(1)
