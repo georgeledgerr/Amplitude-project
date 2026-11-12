@@ -1,4 +1,4 @@
-amplitude_data/
+#amplitude_data/
 test_*.py
 
 # Byte-compiled / optimized / DLL files
