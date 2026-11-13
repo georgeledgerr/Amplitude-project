@@ -16,6 +16,7 @@ The project pulls website event data from the Amplitude API.
 The script also does/features:
 
 - **Duplication Handling:** Skips the download if a file for that date range already exists
+- **URL Errors:** Checks the URL to make sure we are using the connecting to the correct endpoint
 - **Soft errors:** Treats `404` (no data for the range yet) as a warning, not a failure
 - **Hard errors:**Stops on `400`, `401` or `403`, which mean the request or keys need fixing
 - **Retry logic:**Retries up to 3 times on `429` (rate limit) or server errors

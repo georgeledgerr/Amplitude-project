@@ -6,8 +6,9 @@ from dotenv import load_dotenv
 import sys
 import zipfile
 import time
+import logging
 
-#timestamp = datetime.now().strftime('%Y-%m-%d %H-%M-%S') #timestamp for our data and filename ----> no longer used
+timestamp = datetime.now().strftime('%Y-%m-%d %H-%M-%S') #timestamp for logging
 #print(timestamp)
 
 data_dir = 'amplitude_data' #naming folder where data is stored
@@ -17,11 +18,27 @@ data_dir = 'amplitude_data' #naming folder where data is stored
 #this ran fine
 #going to remove because i have added new gitignore
 
+log_dir = 'logs'
+os.makedirs(log_dir, exist_ok=True) # logging fails if the logs folder doesn't exist
+log_filename = f'{log_dir}/{timestamp}.log'
+ 
+logging.basicConfig(
+    filename=log_filename,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+ 
+logger = logging.getLogger()
+logger.info('Logger was successfully initialised.')
+
 url='https://analytics.eu.amplitude.com/api/2/export' #EU endpoint DONT USE STANDARD
 #Id like to put some error handling here incase the url changes for EU
 #maybe a try and except?
 
-#add if statement to check url is correct url
+if 'analytics.eu.amplitude.com' not in url: # URL check because our API key does not work for NA
+    print(f'URL is not for the EU endpoint - {url}')
+    logger.error(f'URL is for the EU endpoint - {url}')
+    sys.exit(1)
 
 load_dotenv()
 api_key = os.getenv('AMP_API_KEY') #loads in api key (AMP_API_KEY has to match in here and .env(?))
