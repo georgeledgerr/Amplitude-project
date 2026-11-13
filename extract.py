@@ -21,6 +21,8 @@ url='https://analytics.eu.amplitude.com/api/2/export' #EU endpoint DONT USE STAN
 #Id like to put some error handling here incase the url changes for EU
 #maybe a try and except?
 
+#add if statement to check url is correct url
+
 load_dotenv()
 api_key = os.getenv('AMP_API_KEY') #loads in api key (AMP_API_KEY has to match in here and .env(?))
 secret_key = os.getenv('AMP_SECRET_KEY') #loads in secret key
@@ -89,11 +91,17 @@ while attempt <= max_attempts:
         print(f'Retrying in {delay_to_retry_seconds}s')
         time.sleep(delay_to_retry_seconds)
 
+    if attempt == max_attempts:
+        print('Max attempts reached, please investigate 🗿')
+        sys.exit(1)
+
     attempt+=1
 
-else:
-    print('Max attempts reached, please investigate 🗿') #only reaches here if the while loop isnt broken
-    sys.exit(1)
+# else:
+#     print('Max attempts reached, please investigate 🗿') #only reaches here if the while loop isnt broken
+#     sys.exit(1)
+#     #why doesnt this fail
+#     #this needs to be happening inside the loop
  
 with open(filename, 'wb') as file: #write file to the filename path and write bytes because its a zip file, JSON DIDNT WORK
     #with allows the file to be closed automatically after it is done, so no need to close it manually
