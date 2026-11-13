@@ -63,7 +63,7 @@ if not api_key or not secret_key: #this checks if the rows exist in the .env fil
     logger.error('Keys not found, check .env file :/💀') # logging
     sys.exit(1) #abnormal error from my understanding, but it stops the run if no keys are found
 
-Test = False  #for testing 1h vs on a schedule dynamically
+Test = True  #for testing 1h vs on a schedule dynamically
  
 if Test:
     start_time = '20261111T12'
