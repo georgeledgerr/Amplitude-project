@@ -1,5 +1,6 @@
 #amplitude_data/
 #test_*.py
+logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

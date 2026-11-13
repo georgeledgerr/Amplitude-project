@@ -1,0 +1,16 @@
+import sys
+import logging
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+api_key = os.getenv('AMP_API_KEY') #loads in api key (AMP_API_KEY has to match in here and .env(?))
+secret_key = os.getenv('AMP_SECRET_KEY') #loads in secret key
+
+#error handling if no API key present in .env
+if not api_key or not secret_key: #this checks if the rows exist in the .env file
+    print('Keys not found, check .env file :/💀')
+    #logger.error('Keys not found, check .env file :/💀') # logging
+    sys.exit(1) #abnormal error from my understanding, but it stops the run if no keys are found
+else:
+    print("all good")
