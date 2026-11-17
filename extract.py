@@ -18,7 +18,11 @@ data_dir = 'amplitude_data' #naming folder where data is stored
 #this ran fine
 #going to remove because i have added new gitignore
 
-log_dir = 'logs'
+zips_dir = os.path.join(data_dir, 'zips') # zips get their own folder: amplitude_data/zips
+os.makedirs(zips_dir, exist_ok=True)      # makes it the first time only; exist_ok means it's left alone if it's already there
+done_dir = os.path.join(data_dir, 'done') # where unzip.py moves finished zips
+
+log_dir = 'logs/extract' # was 'logs', now each script gets its own log folder
 os.makedirs(log_dir, exist_ok=True) # logging fails if the logs folder doesn't exist
 log_filename = f'{log_dir}/{timestamp}.log'
  
@@ -63,7 +67,7 @@ if not api_key or not secret_key: #this checks if the rows exist in the .env fil
     logger.error('Keys not found, check .env file :/💀') # logging
     sys.exit(1) #abnormal error from my understanding, but it stops the run if no keys are found
 
-Test = True  #for testing 1h vs on a schedule dynamically
+Test = False  #for testing 1h vs on a schedule dynamically
  
 if Test:
     start_time = '20261111T12'
@@ -78,13 +82,19 @@ else:
 start_end = {'start': start_time, 'end': end_time}  # now dynamic and can either be in test or normal mode
 # example from docs 'GET 'https://amplitude.com/api/2/export?start=20220101T00&end=20220101T23'
 
-filename = f'{data_dir}/pull_{start_time}_{end_time}.zip' #how file name is being stored with no duplicates
+filename = f'{zips_dir}/pull_{start_time}_{end_time}.zip' # CHANGED: was data_dir, now saves into amplitude_data/zips. How file name is being stored with no duplicates
 print(f'Requesting {start_time} to {end_time}') #showing what is being requested
 logger.info(f'Requesting {start_time} to {end_time}. Test mode - {Test}')
 
 if os.path.exists(filename): #checks if file already exists and skips if it does (consideration)
     print(f'File {filename} already exists. Skipping download.')
     logger.info(f'File {filename} already exists. Skipping download.')
+    sys.exit(0)
+
+done_filename = f'{done_dir}/pull_{start_time}_{end_time}.zip' # same file name, but in done/
+if os.path.exists(done_filename): # already downloaded AND unzipped on a previous run, so skip
+    print(f'File {done_filename} already unzipped previously. Skipping download.')
+    logger.info(f'File {done_filename} already in done. Skipping download.')
     sys.exit(0)
 
 attempt = 1
