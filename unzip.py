@@ -1,137 +1,109 @@
-# =====================================================================
-# unzip.py: turn the zips from extract.py into readable JSON files
-#
-# What an Amplitude zip looks like inside (like a set of nesting boxes):
-#   pull_20261111T12_20261111T12.zip      <- box 1: the zip
-#     └── 100011471/                      <- box 2: a folder named with a number (the project ID)
-#           ├── ..._2026-11-11_12#0.json.gz   <- box 3: compressed files
-#           └── ..._2026-11-11_12#1.json.gz
-#
-# This script opens every box and saves the JSON files inside to amplitude_data/json/
-# =====================================================================
-
-import os         # work with folders and file paths
-import sys        # sys.exit() to stop the script with an exit code
-import zipfile    # open .zip files (box 1)
-import gzip       # open .gz files (box 3)
-import shutil     # copy file contents, and delete whole folders
-import tempfile   # make a throwaway folder to unzip into
-import logging    # write a log file, like extract.py
+import os
+import sys
+import zipfile
+import gzip
+import shutil
+import tempfile
+import logging
 from datetime import datetime
-
-
-# ---------- STEP 0: logging (same pattern as extract.py) ----------
-timestamp = datetime.now().strftime('%Y-%m-%d %H-%M-%S')  # e.g. '2026-11-13 11-55-00', used in the log file name
-
-log_dir = 'logs'
-os.makedirs(log_dir, exist_ok=True)  # make the logs folder if it isn't there (logging crashes without it)
-log_filename = f'{log_dir}/unzip_{timestamp}.log'  # 'unzip_' so you can tell these logs apart from extract.py's
-
+ 
+timestamp = datetime.now().strftime('%Y-%m-%d %H-%M-%S') # timestamp for logging
+ 
+# Logging: same setup as extract.py, with 'unzip_' in front so the two scripts'
+log_dir = 'logs/unzip' #  was 'logs', now each script gets its own log folder
+os.makedirs(log_dir, exist_ok=True) # logging fails if the logs folder doesn't exist
+log_filename = f'{log_dir}/unzip_{timestamp}.log'
+ 
 logging.basicConfig(
     filename=log_filename,
-    format='%(asctime)s - %(levelname)s - %(message)s',  # each log line: time - level - message
-    level=logging.INFO                                   # record INFO and anything more serious
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO
 )
-
+ 
 logger = logging.getLogger()
 logger.info('Logger was successfully initialised.')
-
-
-# ---------- STEP 1: set up the folders ----------
-data_dir = 'amplitude_data'                # where extract.py saved the zips
-json_dir = os.path.join(data_dir, 'json')  # where the JSON files will go: 'amplitude_data/json'
-                                           # (os.path.join glues folder names together with the right slash)
-os.makedirs(json_dir, exist_ok=True)       # make the json folder if it isn't there
-
-
-# ---------- STEP 2: find the zips to unzip ----------
-# Look at every name in amplitude_data/ and keep only the ones that
-# start with 'pull_' AND end with '.zip', then sort them (oldest date first).
-# Long-hand version:
-#   zip_files = []
-#   for f in os.listdir(data_dir):
-#       if f.startswith('pull_') and f.endswith('.zip'):
-#           zip_files.append(f)
-#   zip_files.sort()
-zip_files = sorted(f for f in os.listdir(data_dir) if f.startswith('pull_') and f.endswith('.zip'))
-
-# No zips found = nothing to do. Not an error, so exit code 0.
+ 
+data_dir = 'amplitude_data'               # where extract.py saves the zips
+zips_dir = os.path.join(data_dir, 'zips') # the zips are now in amplitude_data/zips
+os.makedirs(zips_dir, exist_ok=True)      # stops os.listdir crashing if the folder isn't there yet
+done_dir = os.path.join(data_dir, 'done') # unzipped zips get moved here
+os.makedirs(done_dir, exist_ok=True)      # this script creates done/ (extract.py only reads it)
+json_dir = os.path.join(data_dir, 'json') # where the decompressed JSON files go
+os.makedirs(json_dir, exist_ok=True)
+ 
+# Find every zip extract.py has saved
+zip_files = sorted(f for f in os.listdir(zips_dir) if f.startswith('pull_') and f.endswith('.zip')) #lists each file name in the directory and checks it starts with pull and ends with .zip   # CHANGED: data_dir -> zips_dir, finished the comment
+ 
 if not zip_files:
-    print(f'No pull_*.zip files found in {data_dir}. Run extract.py first.')
-    logger.warning(f'No pull_*.zip files found in {data_dir}')
+    print(f'No pull_*.zip files found in {zips_dir}. Run extract.py first.') # data_dir -> zips_dir --> error handling if no zips are ready to be unzipped
+    logger.warning(f'No pull_*.zip files found in {zips_dir}')               # data_dir -> zips_dir
     sys.exit(0)
-
-print(f'Found {len(zip_files)} zip file(s) to unzip')  # len() = how many items are in the list
+ 
+print(f'Found {len(zip_files)} zip file(s) to unzip') # --> prints number of zipped files
 logger.info(f'Found {len(zip_files)} zip file(s): {zip_files}')
+ 
+failed = 0 # count failures so the exit code can say whether everything worked
+ 
+for zip_name in zip_files:
+    zip_path = os.path.join(zips_dir, zip_name) # data_dir -> zips_dir --> loops through all the files for unzipping
 
-failed = 0  # a counter: goes up by 1 every time a zip fails, so we know at the end if anything went wrong
+    # skip this zip if it's already in done/ (it was unzipped on a previous run)
+    if os.path.exists(os.path.join(done_dir, zip_name)):
+        print(f'{zip_name} already unzipped previously (in {done_dir}). Skipping.')
+        logger.warning(f'{zip_name} already in {done_dir}. Skipping.')
+        continue # jump straight to the next zip in the loop
 
-
-# ---------- STEP 3: unzip each zip, one at a time ----------
-for zip_name in zip_files:                       # e.g. zip_name = 'pull_20261111T12_20261111T12.zip'
-    zip_path = os.path.join(data_dir, zip_name)  # full path: 'amplitude_data/pull_..._.zip'
-    temp_dir = tempfile.mkdtemp()                # make a brand-new empty throwaway folder for this zip
-
-    try:  # try all of this; if anything goes wrong, jump to the matching 'except' below
-
-        # --- 3a. Open box 1: unzip everything into the throwaway folder ---
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:  # 'r' = read. 'with' closes the zip when done
-            zip_ref.extractall(temp_dir)                 # extract every file inside into temp_dir
+    temp_dir = tempfile.mkdtemp() # a fresh temporary folder for each zip
+ 
+    try:
+        # 1. Unzip into the temporary folder
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_dir)
         logger.info(f'{zip_name} extracted to temp folder {temp_dir}')
-
-        # --- 3b. Find box 2: the folder whose name is all digits (the project ID) ---
-        # Same pattern as STEP 2, but next() takes just the FIRST match instead of building a list.
-        # If there's no match at all, next() raises StopIteration (handled below).
-        id_folder = next(f for f in os.listdir(temp_dir) if f.isdigit())  # .isdigit() = "is this text all numbers?"
-        id_path = os.path.join(temp_dir, id_folder)                        # full path to that folder
-
-        # --- 3c. Open box 3: decompress every .gz file ---
-        # os.walk goes through a folder AND all folders inside it.
-        # Each time round it gives: root  = the folder it's currently in
-        #                           _     = the sub-folders (not needed, so named _ meaning "ignore this")
-        #                           files = the list of files in that folder
+ 
+        # 2. Find the numbered folder (Amplitude's project ID)
+        id_folder = next(f for f in os.listdir(temp_dir) if f.isdigit())
+        id_path = os.path.join(temp_dir, id_folder)
+ 
+        # 3. Decompress every .gz file into amplitude_data/json/
         for root, _, files in os.walk(id_path):
             for file in files:
-                if file.endswith('.gz'):                           # only the compressed files
-                    gz_path = os.path.join(root, file)             # where the .gz file is
-                    json_filename = file[:-3]                      # chop the last 3 characters ('.gz') off the name
-                    output_path = os.path.join(json_dir, json_filename)  # where the JSON file will be saved
-
-                    # Open the .gz for reading and a new file for writing, both as bytes ('rb'/'wb'),
-                    # then copy everything across. gzip.open un-compresses as it reads.
+                if file.endswith('.gz'):
+                    gz_path = os.path.join(root, file)
+                    json_filename = file[:-3] # remove the .gz extension
+                    output_path = os.path.join(json_dir, json_filename)
+ 
                     with gzip.open(gz_path, 'rb') as gz_file, open(output_path, 'wb') as out_file:
                         shutil.copyfileobj(gz_file, out_file)
-
+ 
                     logger.info(f'Decompressed {file} -> {output_path}')
-
+ 
         print(f'Unzipped {zip_name} 😁')
         logger.info(f'Finished {zip_name}')
 
+        # 4. NEW: move the zip into done/ so it isn't unzipped again (and is kept as a backup)
+        shutil.move(zip_path, os.path.join(done_dir, zip_name)) # NEW: only reached if steps 1-3 worked, so a failed zip stays in zips/ to retry
+        logger.info(f'Moved {zip_name} to {done_dir}')          # NEW
+ 
     except StopIteration:
-        # 3b found no all-digits folder inside the zip
+        # next() found no numbered folder inside the zip
         failed += 1
         print(f'{zip_name}: no numbered folder found inside the zip')
         logger.error(f'{zip_name}: no numbered folder found inside the zip')
-
     except Exception as e:
-        # anything else went wrong (e.g. the zip is broken). Log it and carry on with the next zip
+        # anything else (e.g. a corrupt zip): log it and move on to the next zip
         failed += 1
         print(f'{zip_name}: failed to unzip - {e}')
         logger.error(f'{zip_name}: failed to unzip - {e}')
-
     finally:
-        # 'finally' ALWAYS runs, whether the try worked or failed:
-        # delete the throwaway folder so they don't pile up
-        shutil.rmtree(temp_dir, ignore_errors=True)  # rmtree = delete a folder and everything in it
+        # always delete the temporary folder, whether it worked or not
+        shutil.rmtree(temp_dir, ignore_errors=True)
         logger.info(f'Temp folder deleted for {zip_name}')
-
-
-# ---------- STEP 4: finish with the right exit code ----------
-if failed:  # failed is more than 0, so at least one zip went wrong
+ 
+if failed:
     print(f'{failed} zip file(s) failed. Check {log_filename}')
     logger.error(f'{failed} of {len(zip_files)} zip file(s) failed')
-    sys.exit(1)  # 1 = something needs looking at
-
+    sys.exit(1)
+ 
 print(f'All files decompressed to {json_dir}')
 logger.info(f'All files decompressed to {json_dir}')
-# reaching the end normally = exit code 0 (success)
