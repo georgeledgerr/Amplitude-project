@@ -1,0 +1,66 @@
+import os
+import logging
+from dotenv import load_dotenv
+from function_extract import extract
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')  # no filename = logs print in the terminal
+
+load_dotenv()
+
+result = extract(
+    url='https://analytics.eu.amplitude.com/api/2/export',
+    api_key=os.getenv('AMP_API_KEY'),
+    secret_key=os.getenv('AMP_SECRET_KEY'),
+    Test=True # 1 hour only so its faster
+)
+
+print(f'extract returned: {result}')
+
+#1st run returned
+# # 2026-11-18 12:55:40,938 - INFO - Extract started.
+# Requesting 20261111T12 to 20261111T12
+# 2026-11-18 12:55:40,938 - INFO - Requesting 20261111T12 to 20261111T12. Test mode - True
+# 2026-11-18 12:55:58,624 - INFO - Attempt 1. Status code = 200
+# This could change everything, data received 💵
+# 2026-11-18 12:55:58,628 - INFO - This could change everything, data received 💵
+# Saved successfully 😁: amplitude_data\zips/pull_20261111T12_20261111T12.zip
+# 2026-11-18 12:55:58,657 - INFO - Saved successfully 😁: amplitude_data\zips/pull_20261111T12_20261111T12.zip
+# extract returned: amplitude_data\zips/pull_20261111T12_20261111T12.zip
+
+
+#2nd run where it should see a dupe file and not download it 
+# 2026-11-18 12:59:49,065 - INFO - Extract started.
+# Requesting 20261111T12 to 20261111T12
+# 2026-11-18 12:59:49,068 - INFO - Requesting 20261111T12 to 20261111T12. Test mode - True
+# File amplitude_data\zips/pull_20261111T12_20261111T12.zip already exists. Skipping download.
+# 2026-11-18 12:59:49,068 - INFO - File amplitude_data\zips/pull_20261111T12_20261111T12.zip already exists. Skipping download.
+# extract returned: None
+
+#3rd run where i remove .eu from the endpoint
+# 2026-11-18 13:02:14,292 - INFO - Extract started.
+# URL is not for the EU endpoint - https://analytics.amplitude.com/api/2/export
+# 2026-11-18 13:02:14,293 - ERROR - URL is not for the EU endpoint - https://analytics.amplitude.com/api/2/export
+
+#4th run where I made api_key=None
+# 2026-11-18 13:03:44,653 - INFO - Extract started.
+# Keys not found, check .env file :/💀
+# 2026-11-18 13:03:44,653 - ERROR - Keys not found, check .env file :/💀
+
+#5th run where i moved test zip into done to see if it recognises that its already been processed (different to it being in zip folder because that just means its been pulled
+#and not processed)
+# #26-11-18 13:08:07,340 - INFO - Extract started.
+# Requesting 20261111T12 to 20261111T12
+# 2026-11-18 13:08:07,340 - INFO - Requesting 20261111T12 to 20261111T12. Test mode - True
+# File amplitude_data\done/pull_20261111T12_20261111T12.zip already unzipped previously. Skipping download.
+# 2026-11-18 13:08:07,340 - INFO - File amplitude_data\done/pull_20261111T12_20261111T12.zip already in done. Skipping download.
+# extract returned: None
+
+#6th test run where i removed all zips from done/ and zip/ to and messed up API key to say 'not gonna work' to see if we get error for invalid key rather than it not being there
+# 2026-11-18 13:10:59,463 - INFO - Extract started.
+# Requesting 20261111T12 to 20261111T12
+# 2026-11-18 13:10:59,463 - INFO - Requesting 20261111T12 to 20261111T12. Test mode - True
+# 2026-11-18 13:11:00,004 - INFO - Attempt 1. Status code = 403
+# 403 - fix the request or check keys.
+# {"error": {"http_code": 403, "type": "unspecified", "message": "Unspecified Error", "metadata": {"details": "Invalid API Key"}}}
+# 2026-11-18 13:11:00,004 - ERROR - 403 - fix the request or check keys.
+# 2026-11-18 13:11:00,004 - ERROR - {"error": {"http_code": 403, "type": "unspecified", "message": "Unspecified Error", "metadata": {"details": "Invalid API Key"}}}
