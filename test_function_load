@@ -1,0 +1,90 @@
+import os
+import logging
+from dotenv import load_dotenv
+from function_load import load
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+load_dotenv()
+
+result = load(
+    'amplitude_data',
+    os.getenv('AWS_ACCESS_KEY'),
+    os.getenv('AWS_SECRET_ACCESS_KEY'),
+    'os.getenv('AWS_BUCKET_NAME')'
+)
+print(f'load returned: {result}')
+
+
+#test 1 - just checking if upload works properly and all is outputted (1h + a whole days worth of data)
+# 2026-11-18 13:39:33,856 - INFO - Load started.
+# 2026-11-18 13:39:33,857 - INFO - 25 file(s) found in amplitude_data\json
+# AWS keys and bucket are okay 👍
+# 2026-11-18 13:39:34,861 - INFO - AWS keys and bucket are okay
+# File 100011471_2026-11-11_12#0.json successfully uploaded
+# 2026-11-18 13:39:34,977 - INFO - File 100011471_2026-11-11_12#0.json successfully uploaded
+# File 100011471_2026-11-17_0#0.json successfully uploaded
+# 2026-11-18 13:39:35,106 - INFO - File 100011471_2026-11-17_0#0.json successfully uploaded
+# File 100011471_2026-11-17_1#0.json successfully uploaded
+# 2026-11-18 13:39:35,181 - INFO - File 100011471_2026-11-17_1#0.json successfully uploaded
+# File 100011471_2026-11-17_10#0.json successfully uploaded
+# 2026-11-18 13:39:35,445 - INFO - File 100011471_2026-11-17_10#0.json successfully uploaded
+# File 100011471_2026-11-17_11#0.json successfully uploaded
+# 2026-11-18 13:39:35,564 - INFO - File 100011471_2026-11-17_11#0.json successfully uploaded
+# File 100011471_2026-11-17_12#0.json successfully uploaded
+# 2026-11-18 13:39:35,652 - INFO - File 100011471_2026-11-17_12#0.json successfully uploaded
+# File 100011471_2026-11-17_13#0.json successfully uploaded
+# 2026-11-18 13:39:35,733 - INFO - File 100011471_2026-11-17_13#0.json successfully uploaded
+# File 100011471_2026-11-17_14#0.json successfully uploaded
+# 2026-11-18 13:39:35,823 - INFO - File 100011471_2026-11-17_14#0.json successfully uploaded
+# File 100011471_2026-11-17_15#0.json successfully uploaded
+# 2026-11-18 13:39:35,906 - INFO - File 100011471_2026-11-17_15#0.json successfully uploaded
+# File 100011471_2026-11-17_16#0.json successfully uploaded
+# 2026-11-18 13:39:35,974 - INFO - File 100011471_2026-11-17_16#0.json successfully uploaded
+# File 100011471_2026-11-17_17#0.json successfully uploaded
+# 2026-11-18 13:39:36,053 - INFO - File 100011471_2026-11-17_17#0.json successfully uploaded
+# File 100011471_2026-11-17_18#0.json successfully uploaded
+# 2026-11-18 13:39:36,133 - INFO - File 100011471_2026-11-17_18#0.json successfully uploaded
+# File 100011471_2026-11-17_19#0.json successfully uploaded
+# 2026-11-18 13:39:36,212 - INFO - File 100011471_2026-11-17_19#0.json successfully uploaded
+# File 100011471_2026-11-17_2#0.json successfully uploaded
+# 2026-11-18 13:39:36,287 - INFO - File 100011471_2026-11-17_2#0.json successfully uploaded
+# File 100011471_2026-11-17_20#0.json successfully uploaded
+# 2026-11-18 13:39:36,351 - INFO - File 100011471_2026-11-17_20#0.json successfully uploaded
+# File 100011471_2026-11-17_21#0.json successfully uploaded
+# 2026-11-18 13:39:36,424 - INFO - File 100011471_2026-11-17_21#0.json successfully uploaded
+# File 100011471_2026-11-17_22#0.json successfully uploaded
+# 2026-11-18 13:39:36,506 - INFO - File 100011471_2026-11-17_22#0.json successfully uploaded
+# File 100011471_2026-11-17_23#0.json successfully uploaded
+# 2026-11-18 13:39:36,593 - INFO - File 100011471_2026-11-17_23#0.json successfully uploaded
+# File 100011471_2026-11-17_3#0.json successfully uploaded
+# 2026-11-18 13:39:36,672 - INFO - File 100011471_2026-11-17_3#0.json successfully uploaded
+# File 100011471_2026-11-17_4#0.json successfully uploaded
+# 2026-11-18 13:39:36,760 - INFO - File 100011471_2026-11-17_4#0.json successfully uploaded
+# File 100011471_2026-11-17_5#0.json successfully uploaded
+# 2026-11-18 13:39:36,837 - INFO - File 100011471_2026-11-17_5#0.json successfully uploaded
+# File 100011471_2026-11-17_6#0.json successfully uploaded
+# 2026-11-18 13:39:36,913 - INFO - File 100011471_2026-11-17_6#0.json successfully uploaded
+# File 100011471_2026-11-17_7#0.json successfully uploaded
+# 2026-11-18 13:39:36,974 - INFO - File 100011471_2026-11-17_7#0.json successfully uploaded
+# File 100011471_2026-11-17_8#0.json successfully uploaded
+# 2026-11-18 13:39:37,059 - INFO - File 100011471_2026-11-17_8#0.json successfully uploaded
+# File 100011471_2026-11-17_9#0.json successfully uploaded
+# 2026-11-18 13:39:37,183 - INFO - File 100011471_2026-11-17_9#0.json successfully uploaded
+# 2026-11-18 13:39:37,195 - INFO - Load finished. 25 file(s) uploaded.
+# load returned: 25
+
+
+#test 2 - run with nothing inside json folder
+# 2026-11-18 13:40:28,675 - INFO - Load started.
+# 2026-11-18 13:40:28,675 - INFO - 0 file(s) found in amplitude_data\json
+# No .json files in amplitude_data\json. Nothing to upload.
+# 2026-11-18 13:40:28,675 - WARNING - No .json files in amplitude_data\json. Nothing to upload.
+# load returned: None
+
+#test 3 - try and load into s3 but when bucket name is wrong
+# 2026-11-18 13:42:29,376 - INFO - Load started.
+# 2026-11-18 13:42:29,378 - INFO - 1 file(s) found in amplitude_data\json
+# Cannot access the bucket, KILLING SCRIPT. Error Parameter validation failed:
+# Invalid bucket name "wrong bucket king": Bucket name must match the regex "^[a-zA-Z0-9.\-_]{1,255}$" or be an ARN matching the regex "^arn:(aws).*:(s3|s3-object-lambda):[a-z\-0-9]*:[0-9]{12}:accesspoint[/:][a-zA-Z0-9\-.]{1,63}$|^arn:(aws).*:s3-outposts:[a-z\-0-9]+:[0-9]{12}:outpost[/:][a-zA-Z0-9\-]{1,63}[/:]accesspoint[/:][a-zA-Z0-9\-]{1,63}$"
+# 2026-11-18 13:42:29,825 - CRITICAL - Cannot access the bucket, KILLING SCRIPT. Error Parameter validation failed:
+# Invalid bucket name "wrong bucket king": Bucket name must match the regex "^[a-zA-Z0-9.\-_]{1,255}$" or be an ARN matching the regex "^arn:(aws).*:(s3|s3-object-lambda):[a-z\-0-9]*:[0-9]{12}:accesspoint[/:][a-zA-Z0-9\-.]{1,63}$|^arn:(aws).*:s3-outposts:[a-z\-0-9]+:[0-9]{12}:outpost[/:][a-zA-Z0-9\-]{1,63}[/:]accesspoint[/:][a-zA-Z0-9\-]{1,63}$"
